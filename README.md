@@ -1,2 +1,2 @@
 # Healthcare-Metrics-Project
-**Objective***: Build a Data Engineering/Analytics pipeline using provided healthcare CSV files, calculate key metrics, and present insights via a dashboard.
+**Objective:** Build a Data Engineering/Analytics pipeline using provided healthcare CSV files, calculate key metrics, and present insights via a dashboard.
