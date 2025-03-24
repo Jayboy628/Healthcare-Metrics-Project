@@ -1,7 +1,8 @@
-# Healthcare Metrics Project
+# Healthcare Metrics Project Walkthrough: End-to-End Data Pipeline with AWS, Snowflake & DBT
 
-## Project Overview
-**Objective**: Build a Data Engineering/Analytics pipeline using healthcare CSV files, calculate key metrics, and present insights via an interactive dashboard.
+
+## 🎯 Project Objective: Build a Data Engineering/Analytics pipeline using healthcare CSV files, calculate key metrics, and present insights via an interactive dashboard.
+**Process**: To design and deploy a complete data engineering pipeline that ingests data from Google Drive, processes it using AWS services, transforms it with DBT, and analyzes it in Jupyter Lab.
 
 ---
 
@@ -12,7 +13,7 @@
 
 ## Steps & Deliverables
 
-### Step 2: Initial Data Analysis (`01_exploratory_data.ipynb`)
+### Step 1: Initial Data Analysis (`01_exploratory_data.ipynb`)
 **Objective**: Analyze raw data for schema, relationships, and data quality.  
 **Tasks**:
 - Schema exploration and column relationships.
@@ -23,6 +24,22 @@
 **Deliverables**:
 - Report on data quality (missing values, duplicates).
 - List of key columns for joins (e.g., `CMS Certification Number (CCN)`).
+from pathlib import Path
+
+
+## 📁 Step 2: Data Ingestion - Google Drive to AWS S3 (Source Bucket)
+- Data files are sourced from **Google Drive**.
+- I use **Python scripts in VSCode** to:
+  - Authenticate with Google Drive.
+  - Fetch new/updated files.
+  - Upload files into the **S3 Source Bucket**.
+
+---
+
+## ☁️ Step 2: CloudFormation for AWS Infrastructure Setup
+All AWS resources are **automated using CloudFormation** templates:
+
+### 📂 cloudformation/
 
 ---
 
