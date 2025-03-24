@@ -30,7 +30,8 @@ from pathlib import Path
 
 ---
 
-## ☁️ Step 2: CloudFormation for AWS Infrastructure Setup (`02_aws_glue_formation.ipynb`)
+## ☁️ Step 2: CloudFormation for AWS Infrastructure 
+### Setups Documented (`02_aws_glue_formation.ipynb`)
 All AWS resources are **automated using CloudFormation** templates:
 Pipeline Architecture steps (`02_aws_glue_formation.ipynb`)
 
@@ -69,7 +70,8 @@ Pipeline Architecture steps (`02_aws_glue_formation.ipynb`)
 
 ---
 
-## 📊 Step 5: Final Analysis in Jupyter Lab: Data Pipeline & Metrics (`04_healthcare_rpt_matrics.ipynb`)
+## 📊 Step 5: Final Analysis in Jupyter Lab: 
+### Data Pipeline & Metrics Reports (`04_healthcare_rpt_matrics.ipynb`)
 - DBT models are queried via **Snowpark in Jupyter Lab**.
 - Visualizations and analytics are built in **Pandas, Plotly, Seaborn**.
 
