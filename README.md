@@ -4,8 +4,21 @@
 To design and deploy a complete data engineering pipeline that ingests data from Google Drive, processes it using AWS services, transforms it with DBT, and analyzes it in Jupyter Lab.
 
 ---
+![contract](analyses/HealthcareDatapipeline.png)
+---
 
-### Explore 1: Initial Data Analysis (`01_exploratory_data.ipynb`)
+### 🧪 Explore 1: Initial Data Analysis – [View Notebook](analyses/jupyter/01_exploratory_data.ipynb)
+**Objective**: Analyze raw data for schema, relationships, and data quality.  
+**Tasks**:
+- Schema exploration and column relationships.
+- Missing value analysis (e.g., histograms, summary tables).
+- Duplicate detection and outlier identification.
+- Basic visualizations (e.g., distributions, correlations).  
+**Tools**: Pandas, NumPy, Matplotlib/Seaborn.  
+**Deliverables**:
+- Report on data quality (missing values, duplicates).
+- List of key columns for joins (e.g., `CMS Certification Number (CCN)`).
+
 **Objective**: Analyze raw data for schema, relationships, and data quality.  
 **Tasks**:
 - Schema exploration and column relationships.
@@ -31,7 +44,9 @@ from pathlib import Path
 ---
 
 ## ☁️ Step 2: CloudFormation for AWS Infrastructure 
-### Pipeline Architecture steps (`02_aws_glue_formation.ipynb`)
+### ⚙️ Pipeline Architecture Steps – [View Notebook](analyses/jupyter/02_aws_glue_formation.ipynb)
+All AWS resources are **automated using CloudFormation** templates.
+
 All AWS resources are **automated using CloudFormation** templates:
 
 ### 📂 cloudformation/
@@ -46,6 +61,12 @@ All AWS resources are **automated using CloudFormation** templates:
     ├── dev-params.json              # Development environment parameters
     └── prod-params.json             # Production environment parameters
 ```
+
+- 1-iam-roles-stack.json[View json](analyses/aws/Glue/cloudformation/1-iam-roles-stack.json)
+- 2-s3-buckets-stack.json[View json](analyses/aws/Glue/cloudformation/2-s3-buckets-stack.json)
+- 3-glue-snowflake-stack.json[View json](analyses/aws/Glue/cloudformation/3-glue-snowflake-stack.json)
+- 4-glue-workflow-stack.json[View json](analyses/aws/Glue/cloudformation/4-glue-workflow-stack.json)
+- 5-sns-sqs-notification-stack.json[View json](analyses/aws/Glue/cloudformation/5-sns-sqs-notification-stack.json)
 
 ---
 
@@ -70,7 +91,10 @@ All AWS resources are **automated using CloudFormation** templates:
 ---
 
 ## 📊 Step 5: Final Analysis in Jupyter Lab: 
-### Data Pipeline & Metrics Reports (`04_healthcare_rpt_matrics.ipynb`)
+### 📈 Data Pipeline & Metrics Reports – [View Notebook](analyses/jupyter/04_healthcare_rpt_matrics.ipynb)
+DBT models are queried via **Snowpark in Jupyter Lab**.  
+Visualizations and analytics are built in **Pandas, Plotly, Seaborn**.
+
 - DBT models are queried via **Snowpark in Jupyter Lab**.
 - Visualizations and analytics are built in **Pandas, Plotly, Seaborn**.
 
