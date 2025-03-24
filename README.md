@@ -31,9 +31,8 @@ from pathlib import Path
 ---
 
 ## ☁️ Step 2: CloudFormation for AWS Infrastructure 
-### Setups Documented (`02_aws_glue_formation.ipynb`)
+### Pipeline Architecture steps (`02_aws_glue_formation.ipynb`)
 All AWS resources are **automated using CloudFormation** templates:
-Pipeline Architecture steps (`02_aws_glue_formation.ipynb`)
 
 ### 📂 cloudformation/
 ```
