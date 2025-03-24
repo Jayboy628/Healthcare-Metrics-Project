@@ -1,19 +1,15 @@
 # Healthcare Metrics Project Walkthrough: End-to-End Data Pipeline with AWS, Snowflake & DBT
 
 
-## 🎯 Project Objective: Build a Data Engineering/Analytics pipeline using healthcare CSV files, calculate key metrics, and present insights via an interactive dashboard.
-**Process**: To design and deploy a complete data engineering pipeline that ingests data from Google Drive, processes it using AWS services, transforms it with DBT, and analyzes it in Jupyter Lab.
+
+# YouTube Project Walkthrough: End-to-End Data Pipeline with AWS, Snowflake & DBT
+
+## 🎯 Project Objective:
+To design and deploy a complete data engineering pipeline that ingests data from Google Drive, processes it using AWS services, transforms it with DBT, and analyzes it in Jupyter Lab.
 
 ---
 
-## Repository Structure
-
-
----
-
-## Steps & Deliverables
-
-### Step 1: Initial Data Analysis (`01_exploratory_data.ipynb`)
+### Explore 1: Initial Data Analysis (`01_exploratory_data.ipynb`)
 **Objective**: Analyze raw data for schema, relationships, and data quality.  
 **Tasks**:
 - Schema exploration and column relationships.
@@ -27,7 +23,9 @@
 from pathlib import Path
 
 
-## 📁 Step 2: Data Ingestion - Google Drive to AWS S3 (Source Bucket)
+
+---
+## 📁 Step 1: Data Ingestion - Google Drive to AWS S3 (Source Bucket)
 - Data files are sourced from **Google Drive**.
 - I use **Python scripts in VSCode** to:
   - Authenticate with Google Drive.
@@ -38,61 +36,73 @@ from pathlib import Path
 
 ## ☁️ Step 2: CloudFormation for AWS Infrastructure Setup
 All AWS resources are **automated using CloudFormation** templates:
+Pipeline Architecture steps (`02_aws_glue_formation.ipynb`)
 
 ### 📂 cloudformation/
+```
+├── 1-iam-roles-stack.json           # Defines IAM roles & policies for Glue, S3, Lambda
+├── 2-s3-buckets-stack.json          # Sets up S3 Source and Processed buckets
+├── 3-glue-snowflake-stack.json      # Creates Glue connections, crawlers, jobs for Snowflake integration
+├── 4-glue-workflow-stack.json       # Defines Glue workflows for orchestration
+├── 5-sns-sqs-notification-stack.json # Notification system using Outlook email
+├── 6-s3-template-notify.json        # S3 notification events to trigger SNS
+└── parameters/
+    ├── dev-params.json              # Development environment parameters
+    └── prod-params.json             # Production environment parameters
+```
 
 ---
 
-### Step 3: Pipeline Architecture (`02_aws_glue_formation.ipynb`)
-**Objective**: Design and document a scalable data pipeline.  
-**Tasks**:
-- Create architecture diagrams (Lucidchart) for ingestion, transformation, and storage.
-- Define AWS Glue workflows for ETL.
-- Document approval from SMEs.  
-**Deliverables**:
-- Pipeline architecture diagram (ingestion → transformation → Snowflake).
-- Solution design document (tools, workflows, assumptions).
+## 🔁 Step 3: Data Pipeline Flow
+### 🔹 From S3 Source Bucket to Snowflake via Glue:
+- **Glue Crawler** infers schema from S3 and creates a Glue catalog table.
+- **Glue Job** processes and loads the data into **Snowflake (source schema)**.
+- After loading to Snowflake, data is also stored into a **Processed S3 bucket** for archival.
+
+### 🔹 Notification Integration:
+- **S3 Upload Event** triggers **SNS topic**.
+- **SNS** notifies **Lambda function**, which sends an email alert via **Outlook.com SMTP**.
 
 ---
 
-### Steps 4-6: Data Pipeline & Metrics (`04_healthcare_rpt_matrics.ipynb`)
-**Objective**: Build pipeline, calculate metrics, and create a dashboard.  
-**Tasks**:
-1. **Pipeline Implementation**:
-   - Ingest raw CSV files.
-   - Clean, validate, and transform data.
-   - Load into Snowflake.  
-2. **Calculate Metrics**:
-   - **Staffing**: Nurse-to-patient ratio, overtime %, shifts per nurse.
-   - **Facility**: Occupancy rates, bed utilization, patient throughput.
-   - **Quality**: Readmission rates, ALOS, satisfaction scores.
-   - **Cost**: Payroll costs, cost per patient stay.
-   - **Operational**: Shift utilization, staff attrition trends.  
-3. **Dashboard**:
-   - Interactive visualizations (Plotly/Dash).
-   - Filters for state, hospital, and time.  
-**Deliverables**:
-- Working pipeline code (Python/SQL).
-- Metrics calculations (Pandas).
-- Dashboard with heatmaps, trend lines, and bar charts.
+## 📦 Step 4: Data Modeling using DBT on Snowflake
+- **DBT Snowflake Project** structure:
+  - `staging/` - Cleans and standardizes raw source data.
+  - `transform/` - Applies business logic and derived calculations.
+  - `mart/` - Final tables for reporting and analysis (Warehouse & Reports).
 
 ---
 
-### Step 7: Submission & Review
-**Deliverables**:
-- Pipeline documentation (dbt for data lineage).
-- Data dictionary (`NH_Data_Dictionary.pdf`).
-- Dashboard video/presentation explaining design choices.  
-**Tech Stack Justification**:
-- **AWS Glue**: Serverless ETL for scalability.
-- **Snowflake**: Cloud data warehousing for performance.
-- **Plotly/Dash**: Interactive visualizations.
-- **dbt**: Data transformation and lineage tracking.
+## 📊 Step 5: Final Analysis in Jupyter Lab
+- DBT models are queried via **Snowpark in Jupyter Lab**.
+- Visualizations and analytics are built in **Pandas, Plotly, Seaborn**.
 
 ---
 
-## Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/Healthcare-Metrics-Project.git# Healthcare-Metrics-Project
-**Objective:** Build a Data Engineering/Analytics pipeline using provided healthcare CSV files, calculate key metrics, and present insights via a dashboard.
+## 📧 Summary: End-to-End Flow
+```
+Google Drive → VSCode Scripts → S3 Source Bucket
+   ↓
+CloudFormation Sets Up AWS Stack
+   ↓
+S3 → Glue Crawler → Snowflake (source)
+         ↓           ↓
+      SNS Notify → Lambda → Outlook Email
+         ↓
+    Snowflake DBT Models → Mart Layer
+         ↓
+    Reports & Analysis → Jupyter Lab
+```
+
+---
+
+## 🚀 Future Enhancements:
+- Add Delta Lake support for S3 ingestion.
+- Automate DBT model tests via CI/CD.
+- Integrate with Apache Airflow for complex orchestration.
+
+---
+
+This pipeline showcases a **modular, event-driven, cloud-native architecture** for modern data platforms.
+
+👉 Stay tuned for the full walkthrough demo on YouTube!
