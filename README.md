@@ -1,9 +1,5 @@
 # Healthcare Metrics Project Walkthrough: End-to-End Data Pipeline with AWS, Snowflake & DBT
 
-
-
-# YouTube Project Walkthrough: End-to-End Data Pipeline with AWS, Snowflake & DBT
-
 ## 🎯 Project Objective:
 To design and deploy a complete data engineering pipeline that ingests data from Google Drive, processes it using AWS services, transforms it with DBT, and analyzes it in Jupyter Lab.
 
