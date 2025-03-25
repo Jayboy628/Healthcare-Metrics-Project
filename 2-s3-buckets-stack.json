@@ -1,0 +1,77 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "S3 Bucket Configuration",
+  "Parameters": {
+    "EnvironmentType": {
+      "Type": "String",
+      "AllowedValues": ["dev", "prod"],
+      "Default": "dev"
+    }
+  },
+  "Resources": {
+    "SourceBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {"Fn::Sub": "nh-source-${AWS::AccountId}-${EnvironmentType}"},
+        "AccessControl": "Private",
+        "VersioningConfiguration": {"Status": "Enabled"},
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "RawDataExpiration",
+              "Status": "Enabled",
+              "ExpirationInDays": 365,
+              "Prefix": "raw/"
+            }
+          ]
+        }
+      }
+    },
+    "ProcessedBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {"Fn::Sub": "nh-processed-${AWS::AccountId}-${EnvironmentType}"},
+        "AccessControl": "Private",
+        "VersioningConfiguration": {"Status": "Enabled"},
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "Id": "ProcessedDataExpiration",
+              "Status": "Enabled",
+              "ExpirationInDays": 730,
+              "Prefix": "processed/"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "SourceBucketName": {
+      "Value": {"Ref": "SourceBucket"},
+      "Export": {"Name": {"Fn::Sub": "${EnvironmentType}-SourceBucket"}}
+    },
+    "ProcessedBucketName": {
+      "Value": {"Ref": "ProcessedBucket"},
+      "Export": {"Name": {"Fn::Sub": "${EnvironmentType}-ProcessedBucket"}}
+    }
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Notification System for Glue and S3 Events via SNS, EventBridge, and Lambda SES Integration",
+  "Parameters": {
+    "EnvironmentType": {
+      "Type": "String",
+      "Default": "dev",
+      "AllowedValues": ["dev", "prod"]
+    },
+    "SourceBucket": {
+      "Type": "String",
+      "Default": "nh-source-657082399901-dev"
+    },
+    "ProcessedBucket": {
+      "Type": "String",
+      "Default": "nh-processed-657082399901-dev"
+    },
+    "NotificationEmail": {
+      "Type": "String",
+      "Default": "sjjb78@hotmail.com"
+    }
+  },
+  "Resources": {
+    "SNSTopicPipelineNotifications": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": { "Fn::Sub": "PipelineNotifications-${EnvironmentType}" },
+        "Subscription": [
+          {
+            "Protocol": "email",
+            "Endpoint": { "Ref": "NotificationEmail" }
+          }
+        ]
+      }
+    },
+    "EventBridgeToSNSRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": { "Fn::Sub": "EventBridgeToSNSRole-${EnvironmentType}" },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": "events.amazonaws.com" },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "PublishToSNS",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "sns:Publish",
+                  "Resource": { "Ref": "SNSTopicPipelineNotifications" }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "LambdaNotificationFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": { "Fn::Sub": "SendPipelineNotification-${EnvironmentType}" },
+        "Handler": "index.lambda_handler",
+        "Runtime": "python3.11",
+        "Role": { "Fn::GetAtt": ["LambdaNotificationRole", "Arn"] },
+        "Environment": {
+          "Variables": {
+            "SES_SOURCE_EMAIL": { "Ref": "NotificationEmail" },
+            "SES_TARGET_EMAIL": { "Ref": "NotificationEmail" }
+          }
+        },
+        "Code": {
+          "ZipFile": {
+            "Fn::Join": ["\n", [
+              "import boto3",
+              "import os",
+              "import json",
+              "def lambda_handler(event, context):",
+              "    ses = boto3.client('ses')",
+              "    subject = '📣 Pipeline Notification'",
+              "    body = json.dumps(event, indent=2)",
+              "    try:",
+              "        response = ses.send_email(",
+              "            Source=os.environ['SES_SOURCE_EMAIL'],",
+              "            Destination={'ToAddresses': [os.environ['SES_TARGET_EMAIL']]},",
+              "            Message={",
+              "                'Subject': {'Data': subject},",
+              "                'Body': {",
+              "                    'Text': {'Data': body}",
+              "                }",
+              "            }",
+              "        )",
+              "        print('✅ Email sent:', response)",
+              "    except Exception as e:",
+              "        print('❌ Failed to send email:', str(e))"
+            ]]
+      
+          }
+        }
+      }
+    },
+    "LambdaNotificationRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": { "Fn::Sub": "LambdaNotificationRole-${EnvironmentType}" },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": "lambda.amazonaws.com" },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "LambdaSESAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["ses:SendEmail", "ses:SendRawEmail"],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "SNSTopicArn": {
+      "Value": { "Ref": "SNSTopicPipelineNotifications" },
+      "Export": { "Name": { "Fn::Sub": "${EnvironmentType}-PipelineNotificationsTopic" } }
+    },
+    "EventBridgeToSNSRoleArn": {
+      "Value": { "Fn::GetAtt": ["EventBridgeToSNSRole", "Arn"] },
+      "Export": { "Name": { "Fn::Sub": "${EnvironmentType}-EventBridgeToSNSRoleArn" } }
+    },
+    "LambdaNotificationFunctionArn": {
+      "Value": { "Fn::GetAtt": ["LambdaNotificationFunction", "Arn"] },
+      "Export": { "Name": { "Fn::Sub": "${EnvironmentType}-PipelineNotificationLambdaArn" } }
+    }
+  }
+}

@@ -1,0 +1,142 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Glue Crawler and Workflow Configuration",
+  "Parameters": {
+    "EnvironmentType": {
+      "Type": "String",
+      "AllowedValues": ["dev", "prod"],
+      "Default": "dev"
+    },
+    "SourceBucket": {
+      "Type": "String",
+      "Default": "nh-source-123456789012-dev"
+    },
+    "ScriptLocation": {
+      "Type": "String",
+      "Default": "s3://nh-source-123456789012-dev/scripts/health_citations_etl.py"
+    }
+  },
+  "Resources": {
+    "RawDataCrawler": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Name": {"Fn::Sub": "${EnvironmentType}-raw-data-crawler"},
+        "Role": {"Fn::ImportValue": {"Fn::Sub": "${EnvironmentType}-GlueRoleARN"}},
+        "DatabaseName": {"Fn::Sub": "nh_raw_${EnvironmentType}"},
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": {"Fn::Sub": "s3://${SourceBucket}/raw/provider_info"},
+              "Exclusions": ["**/_SUCCESS"]
+            },
+            {
+              "Path": {"Fn::Sub": "s3://${SourceBucket}/raw/health_citations"}
+            }
+          ]
+        },
+        "SchemaChangePolicy": {
+          "UpdateBehavior": "UPDATE_IN_DATABASE",
+          "DeleteBehavior": "LOG"
+        },
+        "Configuration": "{\"Version\":1.0,\"CrawlerOutput\":{\"Partitions\":{\"AddOrUpdateBehavior\":\"InheritFromTable\"}}}",
+        "Schedule": {
+          "ScheduleExpression": "cron(0 12 * * ? *)"
+        },
+        "Tags": {
+          "Environment": {"Ref": "EnvironmentType"}
+        }
+      }
+    },
+    "ETLWorkflow": {
+      "Type": "AWS::Glue::Workflow",
+      "Properties": {
+        "Name": {"Fn::Sub": "${EnvironmentType}-nursing-home-workflow"},
+        "Description": "Orchestrates data ingestion and transformation",
+        "DefaultRunProperties": {
+          "sourceBucket": {"Ref": "SourceBucket"},
+          "environment": {"Ref": "EnvironmentType"}
+        },
+        "Tags": {
+          "Environment": {"Ref": "EnvironmentType"}
+        }
+      }
+    },
+    "CrawlerTrigger": {
+      "Type": "AWS::Glue::Trigger",
+      "DependsOn": "ETLWorkflow",
+      "Properties": {
+        "Name": {"Fn::Sub": "${EnvironmentType}-crawler-trigger"},
+        "WorkflowName": {"Ref": "ETLWorkflow"},
+        "Type": "SCHEDULED",
+        "Schedule": "cron(0 13 * * ? *)",
+        "Actions": [
+          {
+            "CrawlerName": {"Ref": "RawDataCrawler"}
+          }
+        ],
+        "Tags": {
+          "Environment": {"Ref": "EnvironmentType"}
+        }
+      }
+    },
+    "HealthCitationsJob": {
+      "Type": "AWS::Glue::Job",
+      "Properties": {
+        "Name": {"Fn::Sub": "${EnvironmentType}-health-citations-job"},
+        "Role": {"Fn::ImportValue": {"Fn::Sub": "${EnvironmentType}-GlueRoleARN"}},
+        "GlueVersion": "4.0",
+        "WorkerType": "G.1X",
+        "NumberOfWorkers": 10,
+        "Command": {
+          "Name": "glueetl",
+          "ScriptLocation": {"Fn::Sub": "s3://${SourceBucket}/scripts/health_citations_etl.py"}
+        },
+        "DefaultArguments": {
+          "--enable-continuous-cloudwatch-log": "true",
+          "--enable-metrics": "",
+          "--environment": {"Ref": "EnvironmentType"}
+        },
+        "Connections": {
+          "Connections": [
+            {"Fn::Sub": "${EnvironmentType}-snowflake-conn"}
+          ]
+        },
+        "Tags": {
+          "Environment": {"Ref": "EnvironmentType"}
+        }
+      }
+    },
+    "JobTrigger": {
+      "Type": "AWS::Glue::Trigger",
+      "DependsOn": ["HealthCitationsJob", "CrawlerTrigger"],
+      "Properties": {
+        "Name": {"Fn::Sub": "${EnvironmentType}-job-trigger"},
+        "WorkflowName": {"Ref": "ETLWorkflow"},
+        "Type": "CONDITIONAL",
+        "Predicate": {
+          "Conditions": [
+            {
+              "LogicalOperator": "EQUALS",
+              "CrawlerName": {"Ref": "RawDataCrawler"},
+              "CrawlState": "SUCCEEDED"
+            }
+          ]
+        },
+        "Actions": [
+          {
+            "JobName": {"Ref": "HealthCitationsJob"}
+          }
+        ],
+        "Tags": {
+          "Environment": {"Ref": "EnvironmentType"}
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "WorkflowName": {
+      "Value": {"Ref": "ETLWorkflow"},
+      "Export": {"Name": {"Fn::Sub": "${EnvironmentType}-WorkflowName"}}
+    }
+  }
+}

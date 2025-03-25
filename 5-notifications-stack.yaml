@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Notification System for Glue and S3 Events via EventBridge and Lambda SES Integration
+
+Parameters:
+  EnvironmentType:
+    Type: String
+    Default: dev
+    AllowedValues: ["dev", "prod"]
+  SourceBucket:
+    Type: String
+    Default: nh-source-657082399901-dev
+  ProcessedBucket:
+    Type: String
+    Default: nh-processed-657082399901-dev
+  NotificationEmail:
+    Type: String
+    Default: sjjb78@hotmail.com
+
+Resources:
+
+  SNSTopicPipelineNotifications:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub PipelineNotifications-${EnvironmentType}
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref NotificationEmail
+
+  EventBridgeToSNSRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub EventBridgeToSNSRole-${EnvironmentType}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: PublishToSNS
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref SNSTopicPipelineNotifications
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: "*"
+
+  LambdaNotificationFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub SendPipelineNotification-${EnvironmentType}
+      Handler: index.lambda_handler
+      Runtime: python3.11
+      Role: !GetAtt LambdaNotificationRole.Arn
+      Environment:
+        Variables:
+          SES_SOURCE_EMAIL: !Ref NotificationEmail
+          SES_TARGET_EMAIL: !Ref NotificationEmail
+          SNS_TOPIC_ARN: !Ref SNSTopicPipelineNotifications
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import os
+          import json
+
+          def lambda_handler(event, context):
+              sns = boto3.client('sns')
+              topic_arn = os.environ['SNS_TOPIC_ARN']
+              print("📥 Received EventBridge event:")
+              print(json.dumps(event, indent=2))
+              subject = "📣 Pipeline Notification"
+              message = json.dumps(event, indent=2)
+              try:
+                  response = sns.publish(
+                      TopicArn=topic_arn,
+                      Subject=subject,
+                      Message=message
+                  )
+                  print("✅ Notification sent via SNS:", response)
+              except Exception as e:
+                  print("❌ Failed to publish to SNS:", str(e))
+
+
+  LambdaNotificationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub LambdaNotificationRole-${EnvironmentType}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaSESAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                  - ses:SendTemplatedEmail
+                  - sns:Publish
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
+  S3ToLambdaEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub S3ToLambdaNotificationRule-${EnvironmentType}
+      Description: Trigger Lambda on S3 file uploads
+      EventPattern:
+        source:
+          - aws.s3
+        detail-type:
+          - Object Created
+        detail:
+          bucket:
+            name:
+              - !Ref SourceBucket
+      Targets:
+        - Id: "LambdaTarget"
+          Arn: !GetAtt LambdaNotificationFunction.Arn
+          RoleArn: !GetAtt EventBridgeToSNSRole.Arn
+
+Outputs:
+  SNSTopicArn:
+    Value: !Ref SNSTopicPipelineNotifications
+    Export:
+      Name: !Sub ${EnvironmentType}-PipelineNotificationsTopic
+
+  EventBridgeToSNSRoleArn:
+    Value: !GetAtt EventBridgeToSNSRole.Arn
+    Export:
+      Name: !Sub ${EnvironmentType}-EventBridgeToSNSRoleArn
+
+  LambdaNotificationFunctionArn:
+    Value: !GetAtt LambdaNotificationFunction.Arn
+    Export:
+      Name: !Sub ${EnvironmentType}-PipelineNotificationLambdaArn

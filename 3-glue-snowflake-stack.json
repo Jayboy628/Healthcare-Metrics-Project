@@ -1,0 +1,76 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Glue Resources with Snowflake Integration",
+  "Parameters": {
+    "EnvironmentType": {
+      "Type": "String",
+      "AllowedValues": ["dev", "prod"],
+      "Default": "dev"
+    },
+    "SourceBucket": {
+      "Type": "String",
+      "Default": "nh-source-657082399901-dev"
+    },
+    "SnowflakeSecretARN": {
+      "Type": "String",
+      "Description": "ARN of the Snowflake connection secret"
+    },
+    "SnowflakeAccount": {
+      "Type": "String",
+      "Description": "Snowflake account identifier (e.g., xub44819.us-east-1)",
+      "Default": "xub44819.us-east-1"
+    }
+  },
+  "Resources": {
+    "GlueCrawler": {
+      "Type": "AWS::Glue::Crawler",
+      "Properties": {
+        "Name": { "Fn::Sub": "${EnvironmentType}-nursing-home-crawler" },
+        "Role": { "Fn::ImportValue": { "Fn::Sub": "${EnvironmentType}-GlueRoleARN" } },
+        "DatabaseName": { "Fn::Sub": "nh_raw_${EnvironmentType}" },
+        "Targets": {
+          "S3Targets": [
+            {
+              "Path": { "Fn::Sub": "s3://${SourceBucket}/raw/" }
+            }
+          ]
+        },
+        "SchemaChangePolicy": {
+          "UpdateBehavior": "UPDATE_IN_DATABASE",
+          "DeleteBehavior": "DEPRECATE_IN_DATABASE"
+        },
+        "Tags": {
+          "Environment": { "Ref": "EnvironmentType" }
+        }
+      }
+    },
+    "SnowflakeConnection": {
+      "Type": "AWS::Glue::Connection",
+      "Properties": {
+        "CatalogId": { "Ref": "AWS::AccountId" },
+        "ConnectionInput": {
+          "Name": { "Fn::Sub": "${EnvironmentType}-snowflake-conn" },
+          "ConnectionType": "JDBC",
+          "ConnectionProperties": {
+            "JDBC_CONNECTION_URL": {
+              "Fn::Sub": "jdbc:snowflake://${SnowflakeAccount}.snowflakecomputing.com/?warehouse=DEV_WH&db=NURSING_HOME_DEV&schema=SOURCE&role=DE_PM_ROLE"
+            },
+            "USERNAME": "PM_JAY_BROWN",
+            "PASSWORD": {
+              "Fn::Sub": "{{resolve:secretsmanager:${SnowflakeSecretARN}:SecretString:password}}"
+            },
+            "JDBC_ENFORCE_SSL": "true"
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "CrawlerName": {
+      "Value": { "Ref": "GlueCrawler" },
+      "Export": {
+        "Name": { "Fn::Sub": "${EnvironmentType}-GlueCrawler" }
+      }
+    }
+  }
+}

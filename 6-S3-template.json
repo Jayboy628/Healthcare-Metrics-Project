@@ -1,0 +1,9 @@
+{
+  "Template": {
+    "TemplateName": "S3FileUploadNotification",
+    "SubjectPart": "📦 New File Uploaded to S3 - {{bucket_name}}",
+    "HtmlPart": "<h2>New File Detected in S3 Bucket</h2><p><strong>File Name:</strong> {{file_name}}</p><p><strong>Size:</strong> {{file_size}}</p><p><strong>Date:</strong> {{timestamp}}</p>",
+    "TextPart": "New file uploaded to {{bucket_name}}: {{file_name}}, Size: {{file_size}}, Date: {{timestamp}}"
+  }
+}
+

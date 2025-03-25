@@ -1,0 +1,11 @@
+ses.send_templated_email(
+    Source=os.environ['SES_SOURCE_EMAIL'],
+    Destination={'ToAddresses': [os.environ['SES_TARGET_EMAIL']]},
+    Template='S3FileUploadNotification',
+    TemplateData=json.dumps({
+        "bucket_name": bucket_name,
+        "file_name": file_name,
+        "file_size": file_size,
+        "timestamp": timestamp
+    })
+)

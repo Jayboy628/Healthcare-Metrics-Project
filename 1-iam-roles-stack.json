@@ -1,0 +1,95 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "IAM Roles and Policies - Enhanced Full Access for Glue",
+  "Parameters": {
+    "EnvironmentType": {
+      "Type": "String",
+      "AllowedValues": ["dev", "prod"],
+      "Default": "dev"
+    },
+    "SnowflakeSecretARN": {
+      "Type": "String",
+      "Description": "ARN of the Snowflake connection secret",
+      "Default": "arn:aws:secretsmanager:us-east-1:657082399901:secret:connection_parameters_snowflake_dev-Tc7c3a"
+    }
+  },
+  "Resources": {
+    "GlueServiceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": { "Fn::Sub": "GlueServiceRole-${EnvironmentType}" },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": ["glue.amazonaws.com"]
+              },
+              "Action": ["sts:AssumeRole"]
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "FullAccessS3CloudWatchGlueIAMSecrets",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:*"
+                  ],
+                  "Resource": [
+                    { "Fn::Sub": "arn:aws:s3:::nh-source-${AWS::AccountId}-${EnvironmentType}" },
+                    { "Fn::Sub": "arn:aws:s3:::nh-source-${AWS::AccountId}-${EnvironmentType}/*" },
+                    { "Fn::Sub": "arn:aws:s3:::nh-processed-${AWS::AccountId}-${EnvironmentType}" },
+                    { "Fn::Sub": "arn:aws:s3:::nh-processed-${AWS::AccountId}-${EnvironmentType}/*" }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:DescribeSecret"
+                  ],
+                  "Resource": { "Ref": "SnowflakeSecretARN" }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:*"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:*"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": { "Ref": "EnvironmentType" }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "GlueRoleARN": {
+      "Value": { "Fn::GetAtt": ["GlueServiceRole", "Arn"] },
+      "Export": { "Name": { "Fn::Sub": "${EnvironmentType}-GlueRoleARN" } }
+    }
+  }
+}
