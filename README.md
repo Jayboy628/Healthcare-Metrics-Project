@@ -7,7 +7,7 @@ To design and deploy a complete data engineering pipeline that ingests data from
 ![contract](HealthcareDatapipeline.png)
 ---
 
-### 🧪 Explore 1: Initial Data Analysis – [View Notebook](analyses/jupyter/01_exploratory_data.ipynb)
+### 🧪 Explore 1: Initial Data Analysis – [View Notebook](01_exploratory_data.ipynb)
 **Objective**: Analyze raw data for schema, relationships, and data quality.  
 **Tasks**:
 - Schema exploration and column relationships.
@@ -44,7 +44,7 @@ from pathlib import Path
 ---
 
 ## ☁️ Step 2: CloudFormation for AWS Infrastructure 
-### ⚙️ Pipeline Architecture Steps – [View Notebook](analyses/jupyter/02_aws_glue_formation.ipynb)
+### ⚙️ Pipeline Architecture Steps – [View Notebook](02_aws_glue_formation.ipynb)
 All AWS resources are **automated using CloudFormation** templates.
 
 All AWS resources are **automated using CloudFormation** templates:
@@ -91,7 +91,7 @@ All AWS resources are **automated using CloudFormation** templates:
 ---
 
 ## 📊 Step 5: Final Analysis in Jupyter Lab: 
-### 📈 Data Pipeline & Metrics Reports – [View Notebook](analyses/jupyter/04_healthcare_rpt_matrics.ipynb)
+### 📈 Data Pipeline & Metrics Reports – [View Notebook](04_healthcare_rpt_matrics.ipynb)
 DBT models are queried via **Snowpark in Jupyter Lab**.  
 Visualizations and analytics are built in **Pandas, Plotly, Seaborn**.
 
