@@ -4,7 +4,7 @@
 To design and deploy a complete data engineering pipeline that ingests data from Google Drive, processes it using AWS services, transforms it with DBT, and analyzes it in Jupyter Lab.
 
 ---
-![contract](analyses/HealthcareDatapipeline.png)
+![contract](HealthcareDatapipeline.png)
 ---
 
 ### 🧪 Explore 1: Initial Data Analysis – [View Notebook](analyses/jupyter/01_exploratory_data.ipynb)
